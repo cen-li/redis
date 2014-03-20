@@ -1,0 +1,7 @@
+Add a aof replay tool for redis, this is useful fo redis data migration especially when redis is used as store.
+
+- replay all the commands in the aof file to a different redis instance or cluster. 
+- support key prefix replacement
+- the target can be twmemproxy. all the commands twmemproxy doesnot support will be excluded.
+- doesn't support MULTI, EXEC, DISCARD
+ 

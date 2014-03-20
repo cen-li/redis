@@ -22,7 +22,7 @@ STD=-std=c99 -pedantic
 WARN=-Wall
 OPT=$(OPTIMIZATION)
 
-PREFIX?=/usr/local
+PREFIX?=../../output
 INSTALL_BIN=$(PREFIX)/bin
 INSTALL=install
 
@@ -58,7 +58,6 @@ ifeq ($(uname_S),SunOS)
 	INSTALL=cp -pf
 	FINAL_CFLAGS+= -D__EXTENSIONS__ -D_XPG6
 	FINAL_LIBS+= -ldl -lnsl -lsocket -lpthread
-else ifeq ($(uname_S),Darwin)
 	
 else
 	FINAL_LDFLAGS+= -rdynamic
@@ -112,8 +111,10 @@ REDIS_CHECK_DUMP_NAME=redis-check-dump
 REDIS_CHECK_DUMP_OBJ=redis-check-dump.o lzf_c.o lzf_d.o crc64.o
 REDIS_CHECK_AOF_NAME=redis-check-aof
 REDIS_CHECK_AOF_OBJ=redis-check-aof.o
+REDIS_REPLAY_AOF_NAME=redis-replay-aof
+REDIS_REPLAY_AOF_OBJ=redis-replay-aof.o anet.o sds.o zmalloc.o
 
-all: $(REDIS_SERVER_NAME) $(REDIS_SENTINEL_NAME) $(REDIS_CLI_NAME) $(REDIS_BENCHMARK_NAME) $(REDIS_CHECK_DUMP_NAME) $(REDIS_CHECK_AOF_NAME)
+all: $(REDIS_SERVER_NAME) $(REDIS_SENTINEL_NAME) $(REDIS_CLI_NAME) $(REDIS_BENCHMARK_NAME) $(REDIS_CHECK_DUMP_NAME) $(REDIS_CHECK_AOF_NAME) ${REDIS_REPLAY_AOF_NAME}
 	@echo ""
 	@echo "Hint: To run 'make test' is a good idea ;)"
 	@echo ""
@@ -180,6 +181,11 @@ $(REDIS_CHECK_DUMP_NAME): $(REDIS_CHECK_DUMP_OBJ)
 $(REDIS_CHECK_AOF_NAME): $(REDIS_CHECK_AOF_OBJ)
 	$(REDIS_LD) -o $@ $^ $(FINAL_LIBS)
 
+# redis-replay-aof
+$(REDIS_REPLAY_AOF_NAME): $(REDIS_REPLAY_AOF_OBJ)
+	$(REDIS_LD) -o $@ $^ ../deps/hiredis/libhiredis.a ../deps/linenoise/linenoise.o $(FINAL_LIBS)
+
+
 # Because the jemalloc.h header is generated as a part of the jemalloc build,
 # building it should complete before building any other object. Instead of
 # depending on a single artifact, build all dependencies first.
@@ -187,7 +193,7 @@ $(REDIS_CHECK_AOF_NAME): $(REDIS_CHECK_AOF_OBJ)
 	$(REDIS_CC) -c $<
 
 clean:
-	rm -rf $(REDIS_SERVER_NAME) $(REDIS_SENTINEL_NAME) $(REDIS_CLI_NAME) $(REDIS_BENCHMARK_NAME) $(REDIS_CHECK_DUMP_NAME) $(REDIS_CHECK_AOF_NAME) *.o *.gcda *.gcno *.gcov redis.info lcov-html
+	rm -rf $(REDIS_SERVER_NAME) $(REDIS_SENTINEL_NAME) $(REDIS_CLI_NAME) $(REDIS_BENCHMARK_NAME) $(REDIS_CHECK_DUMP_NAME) $(REDIS_CHECK_AOF_NAME) $(REDIS_REPLAY_AOF_NAME) *.o *.gcda *.gcno *.gcov redis.info lcov-html
 
 .PHONY: clean
 
@@ -238,3 +244,4 @@ install: all
 	$(REDIS_INSTALL) $(REDIS_CLI_NAME) $(INSTALL_BIN)
 	$(REDIS_INSTALL) $(REDIS_CHECK_DUMP_NAME) $(INSTALL_BIN)
 	$(REDIS_INSTALL) $(REDIS_CHECK_AOF_NAME) $(INSTALL_BIN)
+	$(REDIS_INSTALL) $(REDIS_REPLAY_AOF_NAME) $(INSTALL_BIN)
